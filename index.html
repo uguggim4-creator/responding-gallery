@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>응답 중... v5 32컷 베스트 셀렉터</title>
+<style>
+:root { color-scheme: dark; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; margin: 0; padding: 0 12px 80px; background: #0d0d0d; color: #eee; }
+header { position: sticky; top: 0; background: #0d0d0d; padding: 14px 0 10px; z-index: 100; border-bottom: 1px solid #2a2a2a; margin-bottom: 12px; }
+h1 { font-size: 17px; margin: 0 0 10px; font-weight: 600; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button { padding: 10px 16px; font-size: 14px; border: none; border-radius: 8px; background: #4CAF50; color: white; font-weight: 600; cursor: pointer; }
+button.alt { background: #555; }
+#count { font-size: 13px; color: #aaa; margin-left: 4px; }
+.scene { margin-bottom: 22px; }
+.scene-title { font-size: 13px; font-weight: 700; margin: 14px 0 8px; color: #888; letter-spacing: 0.5px; text-transform: uppercase; }
+.grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .grid { grid-template-columns: 1fr 1fr 1fr; } }
+.card { position: relative; border-radius: 10px; overflow: hidden; cursor: pointer; background: #1a1a1a; transition: transform 0.05s; -webkit-tap-highlight-color: transparent; }
+.card:active { transform: scale(0.98); }
+.card.selected { box-shadow: 0 0 0 3px #4CAF50; }
+.card img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; }
+.label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); color: white; padding: 24px 10px 8px; font-size: 13px; }
+.id { font-weight: 700; margin-right: 6px; color: #4CAF50; }
+.check { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; }
+.card.selected .check { background: #4CAF50; border-color: #4CAF50; }
+.card.selected .check::after { content: "✓"; }
+#output { margin: 16px 0; padding: 14px; background: #1a1a1a; border-radius: 10px; word-break: break-all; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.5; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #4CAF50; color: white; padding: 10px 18px; border-radius: 24px; font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>「응답 중...」 v5 32컷 베스트 셀렉터</h1>
+  <div class="controls">
+    <button onclick="copySelection()">선택 복사</button>
+    <button class="alt" onclick="clearSelection()">초기화</button>
+    <span id="count">0개 선택</span>
+  </div>
+</header>
+<div id="gallery"></div>
+<div id="output"></div>
+<div class="toast" id="toast"></div>
+<script>
+const cuts = [
+{id:"1-1",url:"https://files.catbox.moe/5kl47a.png",scene:"S1 망설임",desc:"카페 외경 + 학생 뒷모습"},
+{id:"1-2",url:"https://files.catbox.moe/vibhse.png",scene:"S1 망설임",desc:"학생 미디엄 lip-bite"},
+{id:"1-3",url:"https://files.catbox.moe/ln2o0f.png",scene:"S1 망설임",desc:"카페 안 여자 OTS"},
+{id:"1-4",url:"https://files.catbox.moe/qxb87a.png",scene:"S1 망설임",desc:"학생 갈등 close"},
+{id:"1-5",url:"https://files.catbox.moe/p9mo8m.png",scene:"S1 망설임",desc:"학생 호흡 결심"},
+{id:"1-6",url:"https://files.catbox.moe/8uqizc.png",scene:"S1 망설임",desc:"머릿속 호출 트랜지션"},
+{id:"2-1",url:"https://files.catbox.moe/ez691e.png",scene:"S2 머릿속 알람",desc:"빈 화이트 관제실"},
+{id:"2-2",url:"https://files.catbox.moe/zcid8p.png",scene:"S2 머릿속 알람",desc:"빨간 알람 돔"},
+{id:"2-3",url:"https://files.catbox.moe/rt04h1.png",scene:"S2 머릿속 알람",desc:"셋 + 카드 '고백 뭐라고 해야돼..?'"},
+{id:"2-4",url:"https://files.catbox.moe/wt1hsk.png",scene:"S2 머릿속 알람",desc:"문학 솔로"},
+{id:"2-5",url:"https://files.catbox.moe/1swypd.png",scene:"S2 머릿속 알람",desc:"심리 솔로"},
+{id:"2-6",url:"https://files.catbox.moe/z2659j.png",scene:"S2 머릿속 알람",desc:"역사 솔로"},
+{id:"3-1",url:"https://files.catbox.moe/5dpxq0.png",scene:"S3 난리법석",desc:"문학 책 던지기"},
+{id:"3-2",url:"https://files.catbox.moe/2akafe.png",scene:"S3 난리법석",desc:"역사 나폴레옹 보드"},
+{id:"3-3",url:"https://files.catbox.moe/99wjt3.png",scene:"S3 난리법석",desc:"심리 차트 '방어기제'"},
+{id:"3-4",url:"https://files.catbox.moe/hmfbsu.png",scene:"S3 난리법석",desc:"역사 vs 문학 다툼"},
+{id:"3-5",url:"https://files.catbox.moe/bkldin.png",scene:"S3 난리법석",desc:"심리 폭발"},
+{id:"3-6",url:"https://files.catbox.moe/9xot4f.png",scene:"S3 난리법석",desc:"셋 탈진"},
+{id:"4-1",url:"https://files.catbox.moe/t82v58.png",scene:"S4 결단",desc:"정적"},
+{id:"4-2",url:"https://files.catbox.moe/ief0wx.png",scene:"S4 결단",desc:"심리 결단"},
+{id:"4-3",url:"https://files.catbox.moe/xoha5x.png",scene:"S4 결단",desc:"종이 '널 좋아해'"},
+{id:"4-4",url:"https://files.catbox.moe/dg4w6b.png",scene:"S4 결단",desc:"종이 위로 올라감"},
+{id:"5-1",url:"https://files.catbox.moe/10vi3r.png",scene:"S5 대면 고백",desc:"카페 문 열고 들어감"},
+{id:"5-2",url:"https://files.catbox.moe/37ujx6.png",scene:"S5 대면 고백",desc:"테이블로 걸어감"},
+{id:"5-3",url:"https://files.catbox.moe/rob88n.png",scene:"S5 대면 고백",desc:"여자 맞은편 앉음"},
+{id:"5-4",url:"https://files.catbox.moe/lmrm1d.png",scene:"S5 대면 고백",desc:"'널 좋아해' 말함"},
+{id:"5-5",url:"https://files.catbox.moe/bvox5k.png",scene:"S5 대면 고백",desc:"여자 거절 표정"},
+{id:"5-6",url:"https://files.catbox.moe/j4a9k4.png",scene:"S5 대면 고백",desc:"학생 충격"},
+{id:"6-1",url:"https://files.catbox.moe/3011xb.png",scene:"S6 위로",desc:"카드 '반 애한테 차였는데'"},
+{id:"6-2",url:"https://files.catbox.moe/zjkrm4.png",scene:"S6 위로",desc:"셋 3샷 벙찜"},
+{id:"6-3",url:"https://files.catbox.moe/h92pjg.png",scene:"S6 위로",desc:"심리 솔로 충격"},
+{id:"6-4",url:"https://files.catbox.moe/ll7vxm.png",scene:"S6 위로",desc:"AI 자동 인터페이스"},
+{id:"6-5",url:"https://files.catbox.moe/rrff75.png",scene:"S6 위로",desc:"폰 위로 멘트"},
+{id:"6-6",url:"https://files.catbox.moe/uy4cwb.png",scene:"S6 위로",desc:"학생 어이없는 미소"},
+];
+let selected = JSON.parse(localStorage.getItem('selected_cuts_v5') || '[]');
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+function render() {
+  const gallery = document.getElementById('gallery'); gallery.innerHTML = '';
+  const scenes = [...new Set(cuts.map(c => c.scene))];
+  scenes.forEach(sceneName => {
+    const sceneEl = document.createElement('div'); sceneEl.className = 'scene';
+    const title = document.createElement('div'); title.className = 'scene-title'; title.textContent = sceneName; sceneEl.appendChild(title);
+    const grid = document.createElement('div'); grid.className = 'grid';
+    cuts.filter(c => c.scene === sceneName).forEach(cut => {
+      const card = document.createElement('div'); card.className = 'card' + (selected.includes(cut.id) ? ' selected' : '');
+      card.onclick = () => toggle(cut.id);
+      card.innerHTML = `<img loading="lazy" src="${cut.url}" alt="${cut.id}"><div class="label"><span class="id">${cut.id}</span>${cut.desc}</div><div class="check"></div>`;
+      grid.appendChild(card);
+    });
+    sceneEl.appendChild(grid); gallery.appendChild(sceneEl);
+  });
+  updateCount(); updateOutput();
+}
+function toggle(id) { if (selected.includes(id)) selected = selected.filter(x => x !== id); else selected.push(id); localStorage.setItem('selected_cuts_v5', JSON.stringify(selected)); render(); }
+function updateCount() { document.getElementById('count').textContent = `${selected.length}개 선택`; }
+function updateOutput() {
+  const sorted = [...selected].sort();
+  const out = sorted.length > 0 ? `선택: ${sorted.join(', ')}` : '아직 선택된 컷이 없습니다';
+  document.getElementById('output').textContent = out;
+}
+function copySelection() {
+  const text = [...selected].sort().join(', ');
+  if (text === '') { showToast('선택된 컷이 없습니다'); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => showToast('복사됨: ' + text));
+  else { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('복사됨'); }
+}
+function clearSelection() { if (confirm('정말 초기화?')) { selected = []; localStorage.setItem('selected_cuts_v5', '[]'); render(); } }
+render();
+</script>
+</body>
+</html>
